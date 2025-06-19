@@ -4,7 +4,6 @@ import os
 from datetime import date, timedelta
 import calendar 
 
-# --- 초기 설정 및 데이터 관리 함수 ---
 DATA_FILE = "calendar_data.json"
 COLOR_PALETTE = [
     "#3498db", "#f1c40f", "#e74c3c", "#9b59b6", "#2ecc71",
@@ -25,10 +24,8 @@ def save_data(data):
 def get_user_colors(users):
     return {user: COLOR_PALETTE[i % len(COLOR_PALETTE)] for i, user in enumerate(users)}
 
-# --- Streamlit UI 구성 ---
 st.set_page_config(layout="wide", page_title="여름 휴가 공유 캘린더")
 
-# 달력 전용 CSS
 st.markdown("""
     <style>
         .calendar-table { border: 1px solid #dfe6e9; border-collapse: collapse; text-align: center; width: 100%; color: #000000; }
@@ -44,8 +41,6 @@ st.markdown("""
 
 st.title("🗓️ 여름 휴가 공유 캘린더")
 
-# --- 사이드바 (휴가 신청 영역) ---
-# 이 부분은 완벽하게 작동하므로 수정하지 않았습니다.
 with st.sidebar:
     st.header("🏖️ 휴가 신청하기")
     name = st.text_input("이름을 입력하세요", key="name_input")
@@ -116,7 +111,6 @@ with st.sidebar:
             st.balloons()
             st.rerun()
 
-# --- 메인 화면 (전체 캘린더) ---
 data = load_data()
 date_map = {}
 for person, dates in data.items():
@@ -125,6 +119,27 @@ for person, dates in data.items():
 
 all_users = sorted(list(data.keys()))
 user_colors = get_user_colors(all_users)
+
+with st.expander("🗑️ 휴가 신청 내역 삭제하기"):
+    if not data:
+        st.info("현재 신청된 휴가 내역이 없습니다.")
+    else:
+        st.write("아래에서 삭제할 휴가 신청자를 선택하세요.")
+        cols = st.columns(3)
+        for i, (person_name, vacation_dates) in enumerate(data.items()):
+            col = cols[i % 3]
+            with col:
+                st.markdown(f"**{person_name}**")
+                display_dates = [f"• {d.split('-')[1]}월 {d.split('-')[2]}일" for d in vacation_dates[:3]]
+                if len(vacation_dates) > 3:
+                    display_dates.append("...")
+                st.markdown("<div style='font-size:0.8em; margin-bottom:5px;'>" + "<br>".join(display_dates) + "</div>", unsafe_allow_html=True)
+                
+                if st.button(f"'{person_name}' 휴가 삭제", key=f"delete_vacation_{person_name}", use_container_width=True):
+                    del data[person_name]
+                    save_data(data)
+                    st.success(f"'{person_name}' 님의 휴가 신청이 삭제되었습니다.")
+                    st.rerun()
 
 st.header("📅 7월 & 8월 휴가 현황")
 current_year = date.today().year
@@ -158,5 +173,5 @@ for i, month in enumerate([7, 8]):
             day_count += 1
             if day_count % 7 == 0: cal_html += "</tr><tr>"
         
-        cal_html += "</tr></table>"
+        cal_html += "</table>"
         st.markdown(cal_html, unsafe_allow_html=True)
