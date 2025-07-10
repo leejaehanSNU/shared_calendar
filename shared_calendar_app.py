@@ -20,7 +20,7 @@ def connect_sheet():
         return None
     creds = Credentials.from_service_account_info(service_account_info)
     client = gspread.authorize(creds)
-    sheet = client.open("shared_calendar").sheet1
+    sheet = client.open("shared_vacation").sheet1
 
 def load_data():
     sheet = connect_sheet()
