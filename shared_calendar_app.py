@@ -15,11 +15,15 @@ COLOR_PALETTE = [
 
 def connect_sheet():
     service_account_info = st.secrets["gcp_service_account"]
+    scopes = [
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive'
+    ]
     if not service_account_info:
         st.error("Google Sheets 서비스 계정 정보가 설정되지 않았습니다.")
         return None
     try:
-        creds = Credentials.from_service_account_info(service_account_info)
+        creds = Credentials.from_service_account_info(service_account_info, scopes=scopes)
     except Exception as e:
         st.error(f"Google Sheets 인증 오류: {e}")
         return None
