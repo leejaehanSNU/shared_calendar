@@ -18,9 +18,25 @@ def connect_sheet():
     if not service_account_info:
         st.error("Google Sheets 서비스 계정 정보가 설정되지 않았습니다.")
         return None
-    creds = Credentials.from_service_account_info(service_account_info)
-    client = gspread.authorize(creds)
-    sheet = client.open("shared_vacation").sheet1
+    try:
+        creds = Credentials.from_service_account_info(service_account_info)
+    except Exception as e:
+        st.error(f"Google Sheets 인증 오류: {e}")
+        return None
+    try:
+        client = gspread.authorize(creds)
+    except Exception as e:
+        st.error(f"Google Sheets 연결 오류: {e}")
+        return None
+    try:
+        sheet = client.open("shared_vacation").sheet1
+    except gspread.SpreadsheetNotFound:
+        st.error("Google Sheets 문서를 찾을 수 없습니다. 문서 이름이 정확한지 확인하세요.")
+        return None
+    except Exception as e:
+        st.error(f"Google Sheets 접근 오류: {e}")
+        return None
+    return sheet
 
 def load_data():
     sheet = connect_sheet()
