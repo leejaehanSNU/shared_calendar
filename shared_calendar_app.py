@@ -3,6 +3,8 @@ import json
 import os
 from datetime import date, timedelta
 import calendar 
+import gspread
+from google.oauth2.service_account import Credentials
 
 DATA_FILE = "calendar_data.json"
 COLOR_PALETTE = [
@@ -10,16 +12,40 @@ COLOR_PALETTE = [
     "#1abc9c", "#e67e22", "#34495e", "#7f8c8d", "#d35400"
 ]
 
+
+def connect_sheet():
+    service_account_info = json.loads(st.secrets["gcp_service_account"].to_json())
+    creds = Credentials.from_service_account_info(service_account_info)
+    client = gspread.authorize(creds)
+    sheet = client.open("shared_calendar").sheet1
+
 def load_data():
-    if os.path.exists(DATA_FILE):
-        try:
-            with open(DATA_FILE, 'r', encoding='utf-8') as f: return json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError): return {}
-    return {}
+    sheet = connect_sheet()
+    records = sheet.get_all_records()
+    data = {}
+    for row in records:
+        name = row['name']
+        dates = row['dates'].split(',') if row['dates'] else []
+        data[name] = dates
+    return data
 
 def save_data(data):
-    with open(DATA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
+    sheet = connect_sheet()
+    sheet.clear()
+    sheet.append_row(['name', 'dates'])
+    for name, dates in data.items():
+        sheet.append_row([name, ','.join(dates)])
+
+# def load_data():
+#     if os.path.exists(DATA_FILE):
+#         try:
+#             with open(DATA_FILE, 'r', encoding='utf-8') as f: return json.load(f)
+#         except (json.JSONDecodeError, FileNotFoundError): return {}
+#     return {}
+
+# def save_data(data):
+#     with open(DATA_FILE, 'w', encoding='utf-8') as f:
+#         json.dump(data, f, indent=4, ensure_ascii=False)
 
 def get_user_colors(users):
     return {user: COLOR_PALETTE[i % len(COLOR_PALETTE)] for i, user in enumerate(users)}
