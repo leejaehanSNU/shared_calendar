@@ -14,7 +14,10 @@ COLOR_PALETTE = [
 
 
 def connect_sheet():
-    service_account_info = json.loads(st.secrets["gcp_service_account"].to_json())
+    service_account_info = st.secrets["gcp_service_account"]
+    if not service_account_info:
+        st.error("Google Sheets 서비스 계정 정보가 설정되지 않았습니다.")
+        return None
     creds = Credentials.from_service_account_info(service_account_info)
     client = gspread.authorize(creds)
     sheet = client.open("shared_calendar").sheet1
